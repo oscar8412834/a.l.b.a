@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#171923"><meta name="description" content="Calculadora con asistente">
+<link rel="manifest" href="./manifest.json"><link rel="icon" href="./icons/calculadora.svg" type="image/svg+xml">
+<title>Calculadora</title>
+<style>
+:root{color-scheme:dark;--bg:#11131a;--panel:#1d202b;--btn:#292d3a;--accent:#8b9cff;--txt:#f5f6fb;--muted:#aab0c0}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:16px system-ui,Arial;min-height:100dvh}
+.app{max-width:520px;margin:auto;padding:16px;min-height:100dvh;display:flex;flex-direction:column;gap:14px}
+.top{display:flex;align-items:center;justify-content:space-between}.brand{display:flex;gap:10px;align-items:center;font-weight:700}.brand img{width:34px;height:34px}.small{font-size:12px;color:var(--muted)}
+.display{background:var(--panel);border-radius:22px;padding:20px;min-height:125px;display:flex;flex-direction:column;justify-content:flex-end;text-align:right;overflow:hidden}
+.expr{color:var(--muted);min-height:25px;overflow-wrap:anywhere}.result{font-size:clamp(32px,8vw,46px);font-weight:600;overflow-wrap:anywhere}
+.keys{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.key{border:0;border-radius:16px;background:var(--btn);color:var(--txt);font-size:23px;min-height:64px}.key.op{color:#c7ceff;background:#30364d}.key.equal{background:var(--accent);color:#101322;font-weight:700}
+.assist{margin-top:auto;border:1px solid #34394a;border-radius:18px;padding:15px;background:#191c26}.assist-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}.pill{border:1px solid #474d62;background:#252a39;color:#e9ecff;border-radius:999px;padding:8px 12px}
+.hidden{display:none!important}textarea{width:100%;resize:vertical;min-height:84px;border-radius:12px;border:1px solid #41475a;background:#10121a;color:white;padding:12px;font:inherit}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}.primary{background:var(--accent);color:#111526;border:0;border-radius:12px;padding:12px 16px;font-weight:700}.secondary{background:#2a2e3c;color:#fff;border:1px solid #44495b;border-radius:12px;padding:10px 13px}.answer{white-space:pre-wrap;line-height:1.5;color:#e4e7f3;margin-top:12px}.foot{text-align:center;font-size:11px;color:#7e8495;padding:6px}.file{display:none}
+</style></head>
+<body><main class="app">
+<header class="top"><div class="brand"><img src="./icons/calculadora.svg" alt=""><div>Calculadora<div class="small">Modo estándar</div></div></div><button class="pill" id="install" hidden>Instalar</button></header>
+<section class="display"><div class="expr" id="expr">Listo</div><div class="result" id="out">0</div></section>
+<section class="keys" id="keys">
+<button class="key op" data-v="AC">AC</button><button class="key op" data-v="DEL">⌫</button><button class="key op" data-v="%">%</button><button class="key op" data-v="/">÷</button>
+<button class="key" data-v="7">7</button><button class="key" data-v="8">8</button><button class="key" data-v="9">9</button><button class="key op" data-v="*">×</button>
+<button class="key" data-v="4">4</button><button class="key" data-v="5">5</button><button class="key" data-v="6">6</button><button class="key op" data-v="-">−</button>
+<button class="key" data-v="1">1</button><button class="key" data-v="2">2</button><button class="key" data-v="3">3</button><button class="key op" data-v="+">+</button>
+<button class="key" data-v="±">±</button><button class="key" data-v="0">0</button><button class="key" data-v=".">.</button><button class="key equal" data-v="=">=</button>
+</section>
+<section class="assist"><div class="assist-head"><strong>Asistente</strong><button class="pill" id="toggle">Abrir</button></div><div id="panel" class="hidden">
+<p class="small">Podés escribir una consulta o elegir una foto. La conexión con IA todavía no está configurada.</p>
+<textarea id="question" placeholder="Escribí qué necesitás resolver..."></textarea><input class="file" id="photo" type="file" accept="image/*" capture="environment">
+<div class="actions"><button class="primary" id="ask">Consultar</button><button class="secondary" id="pick">Agregar foto</button><button class="secondary" id="clear">Limpiar</button></div><div id="answer" class="answer" aria-live="polite"></div></div></section>
+<div class="foot">Calculadora disponible sin conexión después de la primera carga. La IA requiere configuración adicional.</div>
+</main>
+<script>
+let current='',fresh=true,prev=null,op=null;const out=document.querySelector('#out'),expr=document.querySelector('#expr');
+function show(){out.textContent=current||'0'}function calc(){if(prev===null||!op)return Number(current||0);let b=Number(current||0),a=prev;switch(op){case '+':return a+b;case '-':return a-b;case '*':return a*b;case '/':if(!b)throw Error('No se puede dividir por cero');return a/b;case '%':return a*b/100}return b}
+function press(v){try{if(v==='AC'){current='';prev=null;op=null;fresh=true;expr.textContent='Listo'}else if(v==='DEL'){current=current.slice(0,-1);fresh=false}else if(v==='±'){current=String(-Number(current||0));fresh=false}else if(v==='='){let result=calc();expr.textContent=(prev!==null?prev+' '+op+' ':'')+(current||'0')+' =';current=String(Number(result.toPrecision(12)));prev=null;op=null;fresh=true}else if(['+','-','*','/','%'].includes(v)){if(current!==''){prev=Number(current);op=v;expr.textContent=current+' '+v;current='';fresh=true}}else{if(fresh){current='';fresh=false}if(v==='.'&&current.includes('.'))return;if(current.length<18)current+=v}show()}catch(e){out.textContent='Error';expr.textContent=e.message;current='';prev=null;op=null;fresh=true}}
+document.querySelector('#keys').addEventListener('click',e=>{let b=e.target.closest('button[data-v]');if(b)press(b.dataset.v)});
+document.querySelector('#toggle').onclick=()=>{let p=document.querySelector('#panel');p.classList.toggle('hidden');document.querySelector('#toggle').textContent=p.classList.contains('hidden')?'Abrir':'Cerrar'};
+document.querySelector('#pick').onclick=()=>document.querySelector('#photo').click();
+document.querySelector('#clear').onclick=()=>{document.querySelector('#question').value='';document.querySelector('#answer').textContent='';document.querySelector('#photo').value=''};
+document.querySelector('#ask').onclick=()=>{let q=document.querySelector('#question').value.trim(),f=document.querySelector('#photo').files[0];document.querySelector('#answer').textContent=(q||f)?'La calculadora está instalada, pero el asistente todavía no está conectado a un servicio de IA. No se envió tu consulta ni tu foto.':'Escribí una consulta o agregá una foto.'};
+let installPrompt;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;let b=document.querySelector('#install');b.hidden=false;b.onclick=async()=>{installPrompt.prompt();await installPrompt.userChoice;b.hidden=true}});
+if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
+</script></body></html>
